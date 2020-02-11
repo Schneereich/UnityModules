@@ -11,6 +11,10 @@ using UnityEngine;
 using System;
 using Leap.Unity.Attributes;
 
+#if UNITY_2018_2_OR_NEWER
+using UnityEngine.Rendering;
+#endif
+
 namespace Leap.Unity {
 
   /// <summary>
@@ -253,54 +257,36 @@ namespace Leap.Unity {
     protected virtual void OnEnable() {
       resetShaderTransforms();
 
-      var useSRPFix = false;
-      if (useExperimentalSRPCallback) {
-        #if LEAP_FIX_SRP
-        useSRPFix = true;
-        #endif
+      if (preCullCamera == null) {
+        preCullCamera = GetComponent<Camera>();
       }
-      if (useSRPFix) {
-#if UNITY_2018_1_OR_NEWER
-        // Experimental support for the Lightweight Rendering Pipeline and any
-        // other situation where OnPreCull is not available.
-        UnityEngine.Experimental.Rendering.RenderPipeline.beginCameraRendering -=
-          onPreCull;
-        UnityEngine.Experimental.Rendering.RenderPipeline.beginCameraRendering +=
-          onPreCull;
-#endif
-      } else {
-        // Default behavior: Use a camera's OnPreCull callback to update data for
-        // temporal warping.
-        if (preCullCamera == null) {
-          preCullCamera = GetComponent<Camera>();
-        }
 
+      #if UNITY_2018_2_OR_NEWER
+      if (GraphicsSettings.renderPipelineAsset != null) {
+        RenderPipelineManager.beginCameraRendering -= onBeginRendering;
+        RenderPipelineManager.beginCameraRendering += onBeginRendering;
+      } else {
         Camera.onPreCull -= onPreCull; // No multiple-subscription.
         Camera.onPreCull += onPreCull;
       }
+      #else
+      Camera.onPreCull -= onPreCull; // No multiple-subscription.
+      Camera.onPreCull += onPreCull;
+      #endif
     }
 
     protected virtual void OnDisable() {
       resetShaderTransforms();
 
-      var useSRPFix = false;
-      if (useExperimentalSRPCallback) {
-        #if LEAP_FIX_SRP
-        useSRPFix = true;
-        #endif
-      }
-      if (useSRPFix) {
-#if UNITY_2018_1_OR_NEWER
-        // Experimental support for the Lightweight Rendering Pipeline and any
-        // other situation where OnPreCull is not available.
-        UnityEngine.Experimental.Rendering.RenderPipeline.beginCameraRendering -=
-          onPreCull;
-#endif
+      #if UNITY_2018_2_OR_NEWER
+      if (GraphicsSettings.renderPipelineAsset != null) {
+        RenderPipelineManager.beginCameraRendering -= onBeginRendering;
       } else {
-        // Default behavior: Use a camera's OnPreCull callback to update data for
-        // temporal warping.
-        Camera.onPreCull -= onPreCull;
+        Camera.onPreCull -= onPreCull; // No multiple-subscription.
       }
+      #else
+      Camera.onPreCull -= onPreCull; // No multiple-subscription.
+      #endif
     }
 
     protected override void Start() {
@@ -363,10 +349,17 @@ namespace Leap.Unity {
                                        imageQuatWarp.eulerAngles.y,
                                       -imageQuatWarp.eulerAngles.z);
       Matrix4x4 imageMatWarp = projectionMatrix
+                               #if UNITY_2019_2_OR_NEWER
+                               // The camera projection matrices seem to have vertically inverted...
+                               * Matrix4x4.TRS(Vector3.zero, imageQuatWarp, new Vector3(1f, -1f, 1f))
+                               #else
                                * Matrix4x4.TRS(Vector3.zero, imageQuatWarp, Vector3.one)
+                               #endif
                                * projectionMatrix.inverse;
       Shader.SetGlobalMatrix("_LeapGlobalWarpedOffset", imageMatWarp);
     }
+
+    protected virtual void onBeginRendering(ScriptableRenderContext context, Camera camera) { onPreCull(camera); }
 
     protected virtual void onPreCull(Camera preCullingCamera) {
       if (preCullingCamera != preCullCamera) {

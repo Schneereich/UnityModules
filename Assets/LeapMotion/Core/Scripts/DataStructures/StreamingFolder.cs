@@ -31,6 +31,7 @@ namespace Leap.Unity {
     /// </summary>
     public override string Path {
       get {
+        if (_relativePath == null) { _relativePath = ""; }
         return System.IO.Path.Combine(Application.streamingAssetsPath, _relativePath);
       }
       set {

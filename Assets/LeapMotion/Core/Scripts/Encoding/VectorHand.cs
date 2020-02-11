@@ -10,6 +10,7 @@
 using System;
 using UnityEngine;
 using Leap.Unity.Animation;
+using Leap.Unity.Splines;
 
 namespace Leap.Unity.Encoding {
 
@@ -43,12 +44,15 @@ namespace Leap.Unity.Encoding {
     public bool       isLeft;
     public Vector3    palmPos;
     public Quaternion palmRot;
+    public Pose palmPose { get { return new Pose(palmPos, palmRot); }}
     
     [SerializeField]
     private Vector3[]  _backingJointPositions;
     public Vector3[] jointPositions {
       get {
-        if (_backingJointPositions == null) {
+        if (_backingJointPositions == null ||
+          _backingJointPositions.Length != NUM_JOINT_POSITIONS)
+        {
           _backingJointPositions = new Vector3[NUM_JOINT_POSITIONS];
         }
         return _backingJointPositions;
@@ -90,16 +94,19 @@ namespace Leap.Unity.Encoding {
 
       int boneIdx = 0;
       for (int i = 0; i < 5; i++) {
-        Vector3 baseMetacarpal = ToLocal(fromHand.Fingers[i].bones[0].PrevJoint.ToVector3(),
-                                         palmPos, palmRot);
+        Vector3 baseMetacarpal = ToLocal(
+          fromHand.Fingers[i].bones[0].PrevJoint.ToVector3(), palmPos, palmRot);
         jointPositions[boneIdx++] = baseMetacarpal;
         for (int j = 0; j < 4; j++) {
-          Vector3 joint = ToLocal(fromHand.Fingers[i].bones[j].NextJoint.ToVector3(),
-                                  palmPos, palmRot);
+          Vector3 joint = ToLocal(
+            fromHand.Fingers[i].bones[j].NextJoint.ToVector3(), palmPos, palmRot);
           jointPositions[boneIdx++] = joint;
         }
       }
     }
+
+    // TODO: DELETEME
+    public static Vector3 tweakWristPosition = new Vector3(0f, -0.015f, -0.065f);
 
     public void Decode(Hand intoHand) {
       int boneIdx = 0;
@@ -146,7 +153,7 @@ namespace Leap.Unity.Encoding {
           frameId: -1,
           handId: (isLeft ? 0 : 1),
           fingerId: fingerIdx,
-          timeVisible: Time.time,
+          timeVisible: 10f,// Time.time, <- This is unused and main thread only
           tipPosition: nextJoint.ToVector(),
           direction: (boneRot * Vector3.forward).ToVector(),
           width: 1f,
@@ -165,26 +172,41 @@ namespace Leap.Unity.Encoding {
                       (palmRot).ToLeapQuaternion());
 
       // Finally, fill hand data.
-      intoHand.Fill(frameID:                -1,
-                  id:                     (isLeft ? 0 : 1),
-                  confidence:             1f,
-                  grabStrength:           0.5f,
-                  grabAngle:              100f,
-                  pinchStrength:          0.5f,
-                  pinchDistance:          50f,
-                  palmWidth:              0.085f,
-                  isLeft:                 isLeft,
-                  timeVisible:            1f,
-                  fingers:                null /* already uploaded finger data */,
-                  palmPosition:           palmPos.ToVector(),
-                  stabilizedPalmPosition: palmPos.ToVector(),
-                  palmVelocity:           Vector3.zero.ToVector(),
-                  palmNormal:             (palmRot * Vector3.down).ToVector(),
-                  rotation:               (palmRot.ToLeapQuaternion()),
-                  direction:              (palmRot * Vector3.forward).ToVector(),
-                  wristPosition:          ToWorld(new Vector3(0f, 0f, -0.055f),
-                                                  palmPos,
-                                                  palmRot).ToVector());
+      var palmPose = new Pose(palmPos, palmRot);
+      // var wristPos = ToWorld(new Vector3(0f, -0.015f, -0.065f), palmPos, palmRot);
+      var wristPos = (palmPose * tweakWristPosition).position;
+      intoHand.Fill(
+        frameID:                -1,
+        id:                     (isLeft ? 0 : 1),
+        confidence:             1f,
+        grabStrength:           0.5f,
+        grabAngle:              100f,
+        pinchStrength:          0.5f,
+        pinchDistance:          50f,
+        palmWidth:              0.085f,
+        isLeft:                 isLeft,
+        timeVisible:            1f,
+        fingers:                null /* already uploaded finger data */,
+        palmPosition:           palmPos.ToVector(),
+        stabilizedPalmPosition: palmPos.ToVector(),
+        palmVelocity:           Vector3.zero.ToVector(),
+        palmNormal:             (palmRot * Vector3.down).ToVector(),
+        rotation:               (palmRot.ToLeapQuaternion()),
+        direction:              (palmRot * Vector3.forward).ToVector(),
+        wristPosition:          wristPos.ToVector()
+      );
+
+      // TODO: DELETEME
+      // var sphere = new Geometry.Sphere(radius: 0.008f);
+      // var drawer = HyperMegaStuff.HyperMegaLines.drawer;
+      // drawer.color = LeapColor.cerulean;
+      // sphere.WithCenter(wristPos).DrawLines(drawer.DrawLine);
+
+      // sphere.radius = 0.007f;
+      // drawer.color = LeapColor.white;
+      // foreach (var point in jointPositions) {
+      //   sphere.WithCenter((palmPose * point).position).DrawLines(drawer.DrawLine);
+      // }
     }
 
     #endregion

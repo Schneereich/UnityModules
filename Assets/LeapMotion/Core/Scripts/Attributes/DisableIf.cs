@@ -93,6 +93,10 @@ namespace Leap.Unity.Attributes {
     }
 
     private bool shouldDisable(SerializedProperty property) {
+      if (property == null) {
+        throw new System.NullReferenceException(
+          "Property was null. Expected one of " + propertyNames.ToArrayString());
+      }
       if (nullIsValid && property.propertyType == SerializedPropertyType.ObjectReference) {
         return (property.objectReferenceValue == (UnityEngine.Object)testValue) == disableResult;
       } else if (property.propertyType == SerializedPropertyType.Boolean) {

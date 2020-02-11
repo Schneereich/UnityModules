@@ -25,6 +25,7 @@ namespace Leap.Unity {
     private static Color[] _leftColorList = { new Color(0.0f, 0.0f, 1.0f), new Color(0.2f, 0.0f, 0.4f), new Color(0.0f, 0.2f, 0.2f) };
     private static Color[] _rightColorList = { new Color(1.0f, 0.0f, 0.0f), new Color(1.0f, 1.0f, 0.0f), new Color(1.0f, 0.5f, 0.0f) };
 
+    #pragma warning disable 0649
     [SerializeField]
     private Chirality handedness;
 
@@ -55,6 +56,7 @@ namespace Leap.Unity {
     [MinValue(0)]
     [SerializeField]
     private float _palmRadius = 0.015f;
+    #pragma warning restore 0649
 
     private Material _sphereMat;
     private Hand _hand;
