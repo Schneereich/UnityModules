@@ -55,7 +55,6 @@ namespace Leap.Unity {
       }
     }
 
-    private RiggedHand _parentRiggedHand = null;
     /// <summary>
     /// Updates model bone positions and rotations based on tracked hand data.
     /// </summary>
@@ -87,7 +86,6 @@ namespace Leap.Unity {
               }
 
               var boneLen = boneVec.magnitude;
-
               var standardLen = s_standardFingertipLengths[(int)this.fingerType];
               var newScale = bones[i].transform.localScale;
               var lengthComponentIdx = getLargestComponentIndex(modelFingerPointing);

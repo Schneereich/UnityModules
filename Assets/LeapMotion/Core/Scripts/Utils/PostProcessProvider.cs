@@ -54,6 +54,9 @@ namespace Leap.Unity {
            + "input directly to its output without performing any post-processing.")]
     public bool passthroughOnly = false;
 
+    //This allows the post processor to emit a different number of frames than it receives
+    protected bool _dispatchManually = false;
+
     private Frame _cachedUpdateFrame = new Frame();
     private Frame _cachedFixedFrame = new Frame();
 

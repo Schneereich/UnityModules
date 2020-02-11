@@ -9,6 +9,7 @@
 
 using System;
 using UnityEngine;
+using Leap.Unity.Animation;
 using Leap.Unity.Splines;
 
 namespace Leap.Unity.Encoding {

@@ -10,6 +10,7 @@
 using System;
 using UnityEngine;
 using Leap.Unity.Encoding;
+using Leap.Unity.Animation;
 using Leap.Unity.Splines;
 
 namespace Leap.Unity {
@@ -49,6 +50,16 @@ namespace Leap.Unity {
     public Matrix4x4 matrix {
       get {
         this.rotation = this.rotation.normalized;
+        return Matrix4x4.TRS(this.position, this.rotation, Vector3.one);
+      }
+    }
+
+    /// <summary>
+    /// Returns a Matrix4x4 corresponding to this pose's translation and
+    /// rotation, with unit scale.
+    /// </summary>
+    public Matrix4x4 matrix {
+      get {
         return Matrix4x4.TRS(this.position, this.rotation, Vector3.one);
       }
     }

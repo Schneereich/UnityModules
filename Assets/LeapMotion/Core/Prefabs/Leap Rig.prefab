@@ -154,6 +154,8 @@ MonoBehaviour:
   _frameOptimization: 0
   _physicsExtrapolation: 1
   _physicsExtrapolationTime: 0.011111111
+  _multipleDeviceMode: 0
+  _specificSerialNumber: 
   _workerThreadProfiling: 0
   _deviceOffsetMode: 0
   _deviceOffsetYAxis: 0

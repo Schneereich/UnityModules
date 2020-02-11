@@ -110,6 +110,30 @@ namespace Leap.Unity {
       set { _preCullCamera = value; }
     }
 
+    [Tooltip("Keep this false unless you need support for a custom scriptable " +
+      "rendering pipeline, such as the Lightweight Rendering Pipeline. OnPreCull " +
+      "is not called in such a circumstance, so an experimental " +
+      "beginCameraRendering callback is used instead to update tranform data for " +
+      "temporal warping. You must add the LEAP_FIX_SRP scripting define symbol to " +
+      "your project to enable the use of this toggle. (See Other Settings in " +
+      "your project's Player Settings.)")]
+    [SerializeField, EditTimeOnly]
+    #if !LEAP_FIX_SRP
+    [Disable]
+    #endif
+    private bool _useExperimentalSRPCallback = false;
+    public bool useExperimentalSRPCallback {
+      get { return _useExperimentalSRPCallback; }
+      set {
+        if (this.isActiveAndEnabled) {
+          throw new System.InvalidOperationException(
+            "The LeapServiceProvider must be disabled to modify " +
+            "useExperimentalSRPCallback.");
+        }
+        _useExperimentalSRPCallback = value;
+      }
+    }
+
     // Temporal Warping
 
 #if UNITY_STANDALONE
@@ -290,9 +314,9 @@ namespace Leap.Unity {
       var projectionMatrix = _cachedCamera == null ? Matrix4x4.identity
         : _cachedCamera.projectionMatrix;
       switch (SystemInfo.graphicsDeviceType) {
-        #if !UNITY_2017_2_OR_NEWER
+#if !UNITY_2017_2_OR_NEWER
         case UnityEngine.Rendering.GraphicsDeviceType.Direct3D9:
-        #endif
+#endif
         case UnityEngine.Rendering.GraphicsDeviceType.Direct3D11:
         case UnityEngine.Rendering.GraphicsDeviceType.Direct3D12:
           for (int i = 0; i < 4; i++) {
@@ -551,8 +575,8 @@ namespace Leap.Unity {
           //Determine their new Transforms
           var interpolationTime = CalculateInterpolationTime();
           _leapController.GetInterpolatedLeftRightTransform(
-                            interpolationTime + (ExtrapolationAmount * 1000),
-                            interpolationTime - (BounceAmount * 1000),
+                            interpolationTime + (extrapolationAmount * 1000),
+                            interpolationTime - (bounceAmount * 1000),
                             (leftHand != null ? leftHand.Id : 0),
                             (rightHand != null ? rightHand.Id : 0),
                             out precullLeftHand,
